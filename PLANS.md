@@ -17,7 +17,7 @@ Each milestone fits one ~30-minute session. Acceptance command must exit 0.
 - [x] **M10 SQLite run history** (mvp) — pure-Go driver, `history` command. Accept: `go test ./internal/store/...`
 - [x] **M11 demo command + docs** (polish) — `einvoice demo` from embedded fixtures; README usage. Accept: `go test ./...`
 - [x] **M12 diagnostics polish** (polish) — stable code catalogue, `einvoice explain <code>`. Accept: `go test ./...`
-- [ ] **M13 golden-output tests + lint pass** (polish) — golden files, `go vet` clean. Accept: `go vet ./...`
+- [x] **M13 golden-output tests + lint pass** (polish) — golden files, `go vet` clean. Accept: `go vet ./...`
 
 ## Progress log
 
@@ -34,6 +34,7 @@ Each milestone fits one ~30-minute session. Acceptance command must exit 0.
 - M10 (2026-09-24): new `internal/store` (modernc.org/sqlite; `Open`, `Add`, `List`) with 4 tests; `validate --db <file>` records a run and `history [--db] [--limit]` lists them, 2 CLI tests. modernc.org/sqlite declared in go.mod (go.sum/indirects left to `go mod tidy`). Not committed.
 - M11 (2026-09-24): `einvoice demo` validates the embedded fixtures and prints diagnostics; README Demo section; 2 CLI tests. Not committed.
 - M12 (2026-09-24): new `internal/diag` code catalogue (23 codes) and `einvoice explain [code]`; tests incl. a source scan that every code literal is catalogued; README section. Not committed.
+- M13 (2026-09-24): `cmd/einvoice/golden_test.go` compares `validate` (text/JSON) and `version` output with files in `cmd/einvoice/testdata/golden/` (`-update` regenerates). Golden files were written by hand; vet/test not run in the sandbox. Not committed.
 
 ## Decision log
 
@@ -52,4 +53,5 @@ Each milestone fits one ~30-minute session. Acceptance command must exit 0.
 - D14: History is opt-in on `validate` (`--db`) so normal runs and tests never create files; `history` defaults to `einvoice-history.db` in the working directory. Runs store UTC RFC3339Nano times and newline-joined file names; the store uses one connection so `:memory:` works. Run failures with I/O errors (exit 2) are not recorded. Diagnostic count is the total across files.
 - D15: `demo` exits 0 even though some fixtures carry diagnostics, because those are expected; it exits 1 only if a fixture's codes differ from `expected.json`. Fixtures are parsed with `ParseJSON` from embedded bytes (no disk access).
 - D16: The catalogue is a static list in `internal/diag`, kept in sync by a test that scans non-test sources for `"UPPER_SNAKE"` literals (the dynamic `XDOC_EXCEEDS_*` codes are checked explicitly). Existing diagnostics keep their own messages/fixes; the catalogue holds generic explanations. `explain` upper-cases its argument; unknown code is exit 2.
+- D17: Golden tests cover only deterministic CLI output (no history timestamps). The fixture paths are rewritten to `testdata/...` before comparing, and CRLF in golden files is normalised so Windows checkouts pass. Goldens live under `cmd/einvoice/testdata/golden/`, separate from the shared `testdata/` inputs.
 - D4: `.nightshift.json` runs only `go vet` and `go test`, both on the allowlist.

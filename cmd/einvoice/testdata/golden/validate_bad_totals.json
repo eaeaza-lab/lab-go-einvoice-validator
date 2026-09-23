@@ -1,0 +1,15 @@
+{
+  "valid": false,
+  "files": [
+    "testdata/bad_totals.json"
+  ],
+  "diagnostics": [
+    {
+      "file": "testdata/bad_totals.json",
+      "code": "TOTAL_GROSS",
+      "path": "/gross",
+      "message": "gross is 2500 but net+tax is 2400",
+      "fix": "set \"gross\" to 2400"
+    }
+  ]
+}

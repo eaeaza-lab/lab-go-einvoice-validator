@@ -86,4 +86,10 @@ does not call it yet.
 `go test ./... -run Fixtures` validates every fixture against its expectation; add a new
 fixture by dropping a JSON file in `data/` and an entry in `expected.json`.
 
+## Golden tests
+
+`cmd/einvoice/golden_test.go` compares `validate` (text and JSON) and `version` output with the
+files in `cmd/einvoice/testdata/golden/`. After an intentional output change, regenerate them with
+`go test ./cmd/einvoice -run Golden -update` and review the diff.
+
 Built by a supervised autonomous agent pipeline (nightshift).

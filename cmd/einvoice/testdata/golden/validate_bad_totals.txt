@@ -1,0 +1,2 @@
+testdata/bad_totals.json: TOTAL_GROSS /gross: gross is 2500 but net+tax is 2400
+    fix: set "gross" to 2400
