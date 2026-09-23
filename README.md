@@ -25,6 +25,17 @@ go run ./cmd/einvoice validate testdata/valid.xml
 (`diagnostics` is `[]` when everything is valid). Exit codes are the same. `--format`
 accepts `text` (default) or `json`; anything else is a usage error (exit `2`).
 
+## Demo
+
+`go run ./cmd/einvoice demo` validates the embedded synthetic fixtures and prints their
+diagnostics in the same format as `validate` (fixture names stand in for file names). It
+exits `0` when every fixture yields exactly its expected codes, `1` otherwise.
+
+```
+valid.json: OK
+bad_totals.json: TOTAL_GROSS /gross: ...
+```
+
 ## Run history
 
 `validate --db runs.db <file>...` also records the run (time, files, validity, diagnostic

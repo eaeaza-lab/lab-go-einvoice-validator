@@ -12,6 +12,7 @@ import (
 
 	"github.com/spf13/cobra"
 
+	"example.com/einvoice-validator/internal/fixtures"
 	"example.com/einvoice-validator/internal/invoice"
 	"example.com/einvoice-validator/internal/store"
 )
@@ -61,7 +62,7 @@ func newRootCmd() *cobra.Command {
 		SilenceUsage:  true,
 		SilenceErrors: true,
 	}
-	root.AddCommand(newVersionCmd(), newValidateCmd(), newHistoryCmd())
+	root.AddCommand(newVersionCmd(), newValidateCmd(), newHistoryCmd(), newDemoCmd())
 	return root
 }
 
@@ -164,6 +165,52 @@ func record(path string, r store.Run) error {
 	defer s.Close()
 	_, err = s.Add(r)
 	return err
+}
+
+func newDemoCmd() *cobra.Command {
+	return &cobra.Command{
+		Use:   "demo",
+		Short: "Validate the embedded synthetic fixtures and show the diagnostics",
+		Args:  cobra.NoArgs,
+		RunE: func(cmd *cobra.Command, _ []string) error {
+			out := cmd.OutOrStdout()
+			all, err := fixtures.All()
+			if err != nil {
+				return err
+			}
+			mismatch := false
+			for _, fx := range all {
+				inv, err := invoice.ParseJSON(fx.Data)
+				if err != nil {
+					return fmt.Errorf("fixture %s: %w", fx.Name, err)
+				}
+				diags := invoice.Validate(inv)
+				codes := make([]string, len(diags))
+				for i, d := range diags {
+					codes[i] = d.Code
+				}
+				if strings.Join(codes, ",") != strings.Join(fx.Expected, ",") {
+					mismatch = true
+					fmt.Fprintf(out, "%s: UNEXPECTED (got [%s], want [%s])\n",
+						fx.Name, strings.Join(codes, " "), strings.Join(fx.Expected, " "))
+				}
+				if len(diags) == 0 {
+					fmt.Fprintf(out, "%s: OK\n", fx.Name)
+					continue
+				}
+				for _, d := range diags {
+					fmt.Fprintf(out, "%s: %s %s: %s\n", fx.Name, d.Code, d.Path, d.Message)
+					if d.Fix != "" {
+						fmt.Fprintf(out, "    fix: %s\n", d.Fix)
+					}
+				}
+			}
+			if mismatch {
+				return errDiagnostics
+			}
+			return nil
+		},
+	}
 }
 
 func newHistoryCmd() *cobra.Command {
