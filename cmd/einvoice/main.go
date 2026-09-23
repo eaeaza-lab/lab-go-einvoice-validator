@@ -7,11 +7,17 @@ import (
 	"fmt"
 	"io"
 	"os"
+	"strings"
+	"time"
 
 	"github.com/spf13/cobra"
 
 	"example.com/einvoice-validator/internal/invoice"
+	"example.com/einvoice-validator/internal/store"
 )
+
+// defaultDB is the history file `einvoice history` reads when --db is not given.
+const defaultDB = "einvoice-history.db"
 
 // Version is the CLI version reported by `einvoice version`.
 const Version = "0.1.0"
@@ -55,7 +61,7 @@ func newRootCmd() *cobra.Command {
 		SilenceUsage:  true,
 		SilenceErrors: true,
 	}
-	root.AddCommand(newVersionCmd(), newValidateCmd())
+	root.AddCommand(newVersionCmd(), newValidateCmd(), newHistoryCmd())
 	return root
 }
 
@@ -85,7 +91,7 @@ type jsonReport struct {
 }
 
 func newValidateCmd() *cobra.Command {
-	var format string
+	var format, dbPath string
 	cmd := &cobra.Command{
 		Use:   "validate <file>...",
 		Short: "Validate one or more JSON invoice files",
@@ -97,12 +103,14 @@ func newValidateCmd() *cobra.Command {
 			out := cmd.OutOrStdout()
 			report := jsonReport{Files: files, Diagnostics: []fileDiagnostic{}}
 			found := false
+			total := 0
 			for _, f := range files {
 				inv, err := invoice.Load(f)
 				if err != nil {
 					return err
 				}
 				diags := invoice.Validate(inv)
+				total += len(diags)
 				if format == "json" {
 					for _, d := range diags {
 						report.Diagnostics = append(report.Diagnostics, fileDiagnostic{File: f, Diagnostic: d})
@@ -130,6 +138,12 @@ func newValidateCmd() *cobra.Command {
 					return err
 				}
 			}
+			if dbPath != "" {
+				run := store.Run{Files: files, Valid: !found, Diagnostics: total}
+				if err := record(dbPath, run); err != nil {
+					return err
+				}
+			}
 			if found {
 				return errDiagnostics
 			}
@@ -137,5 +151,58 @@ func newValidateCmd() *cobra.Command {
 		},
 	}
 	cmd.Flags().StringVar(&format, "format", "text", "output format: text or json")
+	cmd.Flags().StringVar(&dbPath, "db", "", "record this run in the SQLite history file at this path")
+	return cmd
+}
+
+// record appends a run to the history database at path.
+func record(path string, r store.Run) error {
+	s, err := store.Open(path)
+	if err != nil {
+		return err
+	}
+	defer s.Close()
+	_, err = s.Add(r)
+	return err
+}
+
+func newHistoryCmd() *cobra.Command {
+	var dbPath string
+	var limit int
+	cmd := &cobra.Command{
+		Use:   "history",
+		Short: "List recorded validation runs, newest first",
+		Args:  cobra.NoArgs,
+		RunE: func(cmd *cobra.Command, _ []string) error {
+			if limit < 0 {
+				return fmt.Errorf("--limit must not be negative")
+			}
+			s, err := store.Open(dbPath)
+			if err != nil {
+				return err
+			}
+			defer s.Close()
+			runs, err := s.List(limit)
+			if err != nil {
+				return err
+			}
+			out := cmd.OutOrStdout()
+			if len(runs) == 0 {
+				fmt.Fprintln(out, "no runs recorded")
+				return nil
+			}
+			for _, r := range runs {
+				status := "OK"
+				if !r.Valid {
+					status = "FAIL"
+				}
+				fmt.Fprintf(out, "#%d %s %s diagnostics=%d files=%s\n", r.ID,
+					r.Time.UTC().Format(time.RFC3339), status, r.Diagnostics, strings.Join(r.Files, ","))
+			}
+			return nil
+		},
+	}
+	cmd.Flags().StringVar(&dbPath, "db", defaultDB, "SQLite history file")
+	cmd.Flags().IntVar(&limit, "limit", 20, "maximum runs to show (0 = all)")
 	return cmd
 }

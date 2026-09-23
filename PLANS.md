@@ -14,7 +14,7 @@ Each milestone fits one ~30-minute session. Acceptance command must exit 0.
 - [x] **M7 XML input** (mvp) — `encoding/xml` loader, parity with JSON fixtures. Accept: `go test ./internal/invoice/...`
 - [x] **M8 identifier checks** (mvp) — invoice id format, currency, synthetic tax-id checksum. Accept: `go test ./internal/ident/...`
 - [x] **M9 cross-document consistency** (mvp) — credit note vs. invoice batch. Accept: `go test ./internal/crossdoc/...`
-- [ ] **M10 SQLite run history** (mvp) — pure-Go driver, `history` command. Accept: `go test ./internal/store/...`
+- [x] **M10 SQLite run history** (mvp) — pure-Go driver, `history` command. Accept: `go test ./internal/store/...`
 - [ ] **M11 demo command + docs** (polish) — `einvoice demo` from embedded fixtures; README usage. Accept: `go test ./...`
 - [ ] **M12 diagnostics polish** (polish) — stable code catalogue, `einvoice explain <code>`. Accept: `go test ./...`
 - [ ] **M13 golden-output tests + lint pass** (polish) — golden files, `go vet` clean. Accept: `go vet ./...`
@@ -31,6 +31,7 @@ Each milestone fits one ~30-minute session. Acceptance command must exit 0.
 - M7 (2026-09-24): `invoice.ParseXML` (strict: unknown elements/attributes, wrong root and trailing content rejected); `Load` picks XML for `.xml` paths so the CLI handles it; added `testdata/valid.xml` and tests including JSON-fixture/XML round-trip parity. Not committed.
 - M8 (2026-09-24): new `internal/ident`: `CheckInvoiceID` (ID_FORMAT), `CheckCurrency` (CURRENCY_UNKNOWN), `CheckTaxID` (TAXID_FORMAT/TAXID_CHECKSUM) with tests. Standalone, not wired into `validate`. Not committed.
 - M9 (2026-09-24): new `internal/crossdoc`: `Check([]Document)` reports XDOC_REF_MISSING, XDOC_REF_NOT_FOUND, XDOC_CURRENCY, XDOC_PARTY and XDOC_EXCEEDS_NET/TAX/GROSS for credit notes, with 5 tests. Standalone, not wired into `validate`. Not committed.
+- M10 (2026-09-24): new `internal/store` (modernc.org/sqlite; `Open`, `Add`, `List`) with 4 tests; `validate --db <file>` records a run and `history [--db] [--limit]` lists them, 2 CLI tests. modernc.org/sqlite declared in go.mod (go.sum/indirects left to `go mod tidy`). Not committed.
 
 ## Decision log
 
@@ -46,4 +47,5 @@ Each milestone fits one ~30-minute session. Acceptance command must exit 0.
 - D11: XML layout mirrors the JSON field names as child elements (`<invoice><id/><currency/><lines><line>…</line></lines><net/><tax/><gross/></invoice>`), no attributes, no namespaces. `encoding/xml` ignores unknown elements, so a token pre-pass enforces the allowed element set to match D5. Missing elements decode to zero values, same as JSON. Format is chosen by file extension (`.xml`, case-insensitive), otherwise JSON. Parity is tested by marshalling each embedded JSON fixture to XML; `XMLName` is cleared after decoding so structs compare equal.
 - D12: Identifier checks are standalone (like the schema checker, D10) so existing fixture expectations stay stable. Invoice id is `INV-YYYY-NNNN` (4–8 digits); currency is a 12-code ISO 4217 subset; the invoice model has no party/tax-id field yet, so `CheckTaxID` takes the path from the caller. Synthetic tax id = `SY` + 8 digits + check digit, where check = sum(digit*(pos+1), pos 0..7) mod 10. Empty id/currency yield no diagnostic here (REQ_* covers them).
 - D13: Cross-document checks are standalone (like D10/D12). The invoice model has no party, kind or reference fields, so `crossdoc.Document` wraps an `invoice.Invoice` with caller-supplied `Kind`, `Party` and `Ref`; the model and fixtures stay unchanged. Credit notes carry positive amounts and credits against one invoice accumulate, so the note that crosses the limit is reported. Paths are `/<document name>/<field>`. Amounts equal to the original are allowed.
+- D14: History is opt-in on `validate` (`--db`) so normal runs and tests never create files; `history` defaults to `einvoice-history.db` in the working directory. Runs store UTC RFC3339Nano times and newline-joined file names; the store uses one connection so `:memory:` works. Run failures with I/O errors (exit 2) are not recorded. Diagnostic count is the total across files.
 - D4: `.nightshift.json` runs only `go vet` and `go test`, both on the allowlist.

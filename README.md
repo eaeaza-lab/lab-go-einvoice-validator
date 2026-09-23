@@ -25,6 +25,13 @@ go run ./cmd/einvoice validate testdata/valid.xml
 (`diagnostics` is `[]` when everything is valid). Exit codes are the same. `--format`
 accepts `text` (default) or `json`; anything else is a usage error (exit `2`).
 
+## Run history
+
+`validate --db runs.db <file>...` also records the run (time, files, validity, diagnostic
+count) in a local SQLite file (pure-Go driver, no cgo). `history [--db runs.db] [--limit N]`
+lists recorded runs newest first (default file `einvoice-history.db`, default limit 20,
+`0` = all). Nothing is recorded unless `--db` is given.
+
 Requires Go 1.22+.
 
 ## Library
