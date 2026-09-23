@@ -33,6 +33,13 @@ Requires Go 1.22+.
 Each diagnostic has a stable `code`, a JSON-pointer-like `path` (e.g. `/lines/0/quantity`),
 a `message` and a suggested `fix`.
 
+## Schema subset
+
+`internal/schema` checks a JSON document against an embedded schema
+(`invoice.schema.json`) supporting `type`, `required`, `properties`, `items` and `enum`.
+Violations are reported as `SCHEMA_TYPE`, `SCHEMA_REQUIRED` or `SCHEMA_ENUM` with a
+JSON-pointer-like path. It is a library only for now; the CLI does not call it yet.
+
 ## Fixtures
 
 `internal/fixtures` embeds synthetic sample invoices (`internal/fixtures/data/*.json`) and
