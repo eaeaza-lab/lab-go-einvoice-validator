@@ -42,6 +42,12 @@ a `message` and a suggested `fix`.
 Violations are reported as `SCHEMA_TYPE`, `SCHEMA_REQUIRED` or `SCHEMA_ENUM` with a
 JSON-pointer-like path. It is a library only for now; the CLI does not call it yet.
 
+## Identifier checks
+
+`internal/ident` validates the invoice id (`INV-YYYY-NNNN`, code `ID_FORMAT`), the currency
+(ISO 4217 subset, `CURRENCY_UNKNOWN`) and a synthetic tax id `SY` + 8 digits + check digit
+(`TAXID_FORMAT`, `TAXID_CHECKSUM`). Library only for now; the CLI does not call it yet.
+
 ## Fixtures
 
 `internal/fixtures` embeds synthetic sample invoices (`internal/fixtures/data/*.json`) and
