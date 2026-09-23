@@ -2,6 +2,7 @@ package main
 
 import (
 	"bytes"
+	"encoding/json"
 	"os"
 	"path/filepath"
 	"strings"
@@ -55,6 +56,43 @@ func TestValidateMultipleFilesReportsAll(t *testing.T) {
 	code, out, _ := runCLI("validate", bad, ok)
 	if code != 1 || !strings.Contains(out, "REQ_ID") || !strings.Contains(out, "OK") {
 		t.Fatalf("code=%d out=%q", code, out)
+	}
+}
+
+func TestValidateJSONDiagnostics(t *testing.T) {
+	bad := writeTemp(t, "bad.json", strings.Replace(validDoc, `"gross":2400`, `"gross":9999`, 1))
+	code, out, _ := runCLI("validate", "--format", "json", bad)
+	if code != 1 {
+		t.Fatalf("code=%d out=%q", code, out)
+	}
+	var rep struct {
+		Valid       bool `json:"valid"`
+		Diagnostics []struct {
+			File string `json:"file"`
+			Code string `json:"code"`
+			Path string `json:"path"`
+		} `json:"diagnostics"`
+	}
+	if err := json.Unmarshal([]byte(out), &rep); err != nil {
+		t.Fatalf("invalid JSON: %v\n%s", err, out)
+	}
+	if rep.Valid || len(rep.Diagnostics) != 1 || rep.Diagnostics[0].Code != "TOTAL_GROSS" || rep.Diagnostics[0].File != bad {
+		t.Fatalf("unexpected report: %+v", rep)
+	}
+}
+
+func TestValidateJSONValidHasEmptyArray(t *testing.T) {
+	p := writeTemp(t, "ok.json", validDoc)
+	code, out, _ := runCLI("validate", "--format", "json", p)
+	if code != 0 || !strings.Contains(out, `"diagnostics": []`) || !strings.Contains(out, `"valid": true`) {
+		t.Fatalf("code=%d out=%q", code, out)
+	}
+}
+
+func TestValidateUnknownFormatExitsTwo(t *testing.T) {
+	p := writeTemp(t, "ok.json", validDoc)
+	if code, _, _ := runCLI("validate", "--format", "yaml", p); code != 2 {
+		t.Fatalf("code=%d, want 2", code)
 	}
 }
 

@@ -19,6 +19,11 @@ go run ./cmd/einvoice validate testdata/bad_totals.json
 (`file: CODE /path: message`, followed by a `fix:` hint). Exit codes: `0` all valid,
 `1` diagnostics found, `2` usage or I/O error (missing/malformed file, bad arguments).
 
+`validate --format json <file>...` prints one JSON document instead:
+`{"valid": bool, "files": [...], "diagnostics": [{"file", "code", "path", "message", "fix"}]}`
+(`diagnostics` is `[]` when everything is valid). Exit codes are the same. `--format`
+accepts `text` (default) or `json`; anything else is a usage error (exit `2`).
+
 Requires Go 1.22+.
 
 ## Library

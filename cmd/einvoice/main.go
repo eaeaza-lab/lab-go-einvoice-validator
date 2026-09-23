@@ -2,6 +2,7 @@
 package main
 
 import (
+	"encoding/json"
 	"errors"
 	"fmt"
 	"io"
@@ -70,13 +71,31 @@ func newVersionCmd() *cobra.Command {
 	}
 }
 
+// fileDiagnostic is a diagnostic tagged with the file it came from (JSON output).
+type fileDiagnostic struct {
+	File string `json:"file"`
+	invoice.Diagnostic
+}
+
+// jsonReport is the document printed by `validate --format json`.
+type jsonReport struct {
+	Valid       bool             `json:"valid"`
+	Files       []string         `json:"files"`
+	Diagnostics []fileDiagnostic `json:"diagnostics"`
+}
+
 func newValidateCmd() *cobra.Command {
-	return &cobra.Command{
+	var format string
+	cmd := &cobra.Command{
 		Use:   "validate <file>...",
 		Short: "Validate one or more JSON invoice files",
 		Args:  cobra.MinimumNArgs(1),
 		RunE: func(cmd *cobra.Command, files []string) error {
+			if format != "text" && format != "json" {
+				return fmt.Errorf("unsupported --format %q (want text or json)", format)
+			}
 			out := cmd.OutOrStdout()
+			report := jsonReport{Files: files, Diagnostics: []fileDiagnostic{}}
 			found := false
 			for _, f := range files {
 				inv, err := invoice.Load(f)
@@ -84,6 +103,12 @@ func newValidateCmd() *cobra.Command {
 					return err
 				}
 				diags := invoice.Validate(inv)
+				if format == "json" {
+					for _, d := range diags {
+						report.Diagnostics = append(report.Diagnostics, fileDiagnostic{File: f, Diagnostic: d})
+					}
+					continue
+				}
 				if len(diags) == 0 {
 					fmt.Fprintf(out, "%s: OK\n", f)
 					continue
@@ -96,10 +121,21 @@ func newValidateCmd() *cobra.Command {
 					}
 				}
 			}
+			if format == "json" {
+				found = len(report.Diagnostics) > 0
+				report.Valid = !found
+				enc := json.NewEncoder(out)
+				enc.SetIndent("", "  ")
+				if err := enc.Encode(report); err != nil {
+					return err
+				}
+			}
 			if found {
 				return errDiagnostics
 			}
 			return nil
 		},
 	}
+	cmd.Flags().StringVar(&format, "format", "text", "output format: text or json")
+	return cmd
 }
