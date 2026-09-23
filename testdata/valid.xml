@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<invoice>
+  <id>INV-2026-0001</id>
+  <currency>EUR</currency>
+  <lines>
+    <line>
+      <description>Widget</description>
+      <quantity>2</quantity>
+      <unit_price>1000</unit_price>
+      <tax_rate_bp>2000</tax_rate_bp>
+    </line>
+  </lines>
+  <net>2000</net>
+  <tax>400</tax>
+  <gross>2400</gross>
+</invoice>

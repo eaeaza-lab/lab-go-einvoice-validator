@@ -6,16 +6,23 @@ import (
 	"fmt"
 	"io"
 	"os"
+	"path/filepath"
+	"strings"
 )
 
-// Load reads an invoice from a JSON file. Unknown fields and trailing
-// content are rejected.
+// Load reads an invoice from a file: XML when the extension is .xml
+// (case-insensitive), JSON otherwise. Unknown fields and trailing content
+// are rejected in both formats.
 func Load(path string) (Invoice, error) {
 	data, err := os.ReadFile(path)
 	if err != nil {
 		return Invoice{}, fmt.Errorf("read %s: %w", path, err)
 	}
-	inv, err := ParseJSON(data)
+	parse := ParseJSON
+	if strings.EqualFold(filepath.Ext(path), ".xml") {
+		parse = ParseXML
+	}
+	inv, err := parse(data)
 	if err != nil {
 		return Invoice{}, fmt.Errorf("%s: %w", path, err)
 	}
