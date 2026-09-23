@@ -25,6 +25,11 @@ go run ./cmd/einvoice validate testdata/valid.xml
 (`diagnostics` is `[]` when everything is valid). Exit codes are the same. `--format`
 accepts `text` (default) or `json`; anything else is a usage error (exit `2`).
 
+## Explaining codes
+
+`go run ./cmd/einvoice explain <code>` prints what a diagnostic code means and how to fix
+it (case-insensitive); with no argument it lists every code. An unknown code exits `2`.
+
 ## Demo
 
 `go run ./cmd/einvoice demo` validates the embedded synthetic fixtures and prints their

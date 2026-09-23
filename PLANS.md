@@ -16,7 +16,7 @@ Each milestone fits one ~30-minute session. Acceptance command must exit 0.
 - [x] **M9 cross-document consistency** (mvp) — credit note vs. invoice batch. Accept: `go test ./internal/crossdoc/...`
 - [x] **M10 SQLite run history** (mvp) — pure-Go driver, `history` command. Accept: `go test ./internal/store/...`
 - [x] **M11 demo command + docs** (polish) — `einvoice demo` from embedded fixtures; README usage. Accept: `go test ./...`
-- [ ] **M12 diagnostics polish** (polish) — stable code catalogue, `einvoice explain <code>`. Accept: `go test ./...`
+- [x] **M12 diagnostics polish** (polish) — stable code catalogue, `einvoice explain <code>`. Accept: `go test ./...`
 - [ ] **M13 golden-output tests + lint pass** (polish) — golden files, `go vet` clean. Accept: `go vet ./...`
 
 ## Progress log
@@ -33,6 +33,7 @@ Each milestone fits one ~30-minute session. Acceptance command must exit 0.
 - M9 (2026-09-24): new `internal/crossdoc`: `Check([]Document)` reports XDOC_REF_MISSING, XDOC_REF_NOT_FOUND, XDOC_CURRENCY, XDOC_PARTY and XDOC_EXCEEDS_NET/TAX/GROSS for credit notes, with 5 tests. Standalone, not wired into `validate`. Not committed.
 - M10 (2026-09-24): new `internal/store` (modernc.org/sqlite; `Open`, `Add`, `List`) with 4 tests; `validate --db <file>` records a run and `history [--db] [--limit]` lists them, 2 CLI tests. modernc.org/sqlite declared in go.mod (go.sum/indirects left to `go mod tidy`). Not committed.
 - M11 (2026-09-24): `einvoice demo` validates the embedded fixtures and prints diagnostics; README Demo section; 2 CLI tests. Not committed.
+- M12 (2026-09-24): new `internal/diag` code catalogue (23 codes) and `einvoice explain [code]`; tests incl. a source scan that every code literal is catalogued; README section. Not committed.
 
 ## Decision log
 
@@ -50,4 +51,5 @@ Each milestone fits one ~30-minute session. Acceptance command must exit 0.
 - D13: Cross-document checks are standalone (like D10/D12). The invoice model has no party, kind or reference fields, so `crossdoc.Document` wraps an `invoice.Invoice` with caller-supplied `Kind`, `Party` and `Ref`; the model and fixtures stay unchanged. Credit notes carry positive amounts and credits against one invoice accumulate, so the note that crosses the limit is reported. Paths are `/<document name>/<field>`. Amounts equal to the original are allowed.
 - D14: History is opt-in on `validate` (`--db`) so normal runs and tests never create files; `history` defaults to `einvoice-history.db` in the working directory. Runs store UTC RFC3339Nano times and newline-joined file names; the store uses one connection so `:memory:` works. Run failures with I/O errors (exit 2) are not recorded. Diagnostic count is the total across files.
 - D15: `demo` exits 0 even though some fixtures carry diagnostics, because those are expected; it exits 1 only if a fixture's codes differ from `expected.json`. Fixtures are parsed with `ParseJSON` from embedded bytes (no disk access).
+- D16: The catalogue is a static list in `internal/diag`, kept in sync by a test that scans non-test sources for `"UPPER_SNAKE"` literals (the dynamic `XDOC_EXCEEDS_*` codes are checked explicitly). Existing diagnostics keep their own messages/fixes; the catalogue holds generic explanations. `explain` upper-cases its argument; unknown code is exit 2.
 - D4: `.nightshift.json` runs only `go vet` and `go test`, both on the allowlist.

@@ -12,6 +12,7 @@ import (
 
 	"github.com/spf13/cobra"
 
+	"example.com/einvoice-validator/internal/diag"
 	"example.com/einvoice-validator/internal/fixtures"
 	"example.com/einvoice-validator/internal/invoice"
 	"example.com/einvoice-validator/internal/store"
@@ -62,7 +63,7 @@ func newRootCmd() *cobra.Command {
 		SilenceUsage:  true,
 		SilenceErrors: true,
 	}
-	root.AddCommand(newVersionCmd(), newValidateCmd(), newHistoryCmd(), newDemoCmd())
+	root.AddCommand(newVersionCmd(), newValidateCmd(), newHistoryCmd(), newDemoCmd(), newExplainCmd())
 	return root
 }
 
@@ -208,6 +209,29 @@ func newDemoCmd() *cobra.Command {
 			if mismatch {
 				return errDiagnostics
 			}
+			return nil
+		},
+	}
+}
+
+func newExplainCmd() *cobra.Command {
+	return &cobra.Command{
+		Use:   "explain [code]",
+		Short: "Explain a diagnostic code (no argument lists all codes)",
+		Args:  cobra.MaximumNArgs(1),
+		RunE: func(cmd *cobra.Command, args []string) error {
+			out := cmd.OutOrStdout()
+			if len(args) == 0 {
+				for _, e := range diag.All() {
+					fmt.Fprintf(out, "%s: %s\n", e.Code, e.Summary)
+				}
+				return nil
+			}
+			e, ok := diag.Lookup(strings.ToUpper(args[0]))
+			if !ok {
+				return fmt.Errorf("unknown diagnostic code %q", args[0])
+			}
+			fmt.Fprintf(out, "%s\n  %s\n  fix: %s\n", e.Code, e.Summary, e.Fix)
 			return nil
 		},
 	}
