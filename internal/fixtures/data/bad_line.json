@@ -1,0 +1,10 @@
+{
+  "id": "INV-2026-0004",
+  "currency": "EUR",
+  "lines": [
+    {"description": "", "quantity": 0, "unit_price": 1000, "tax_rate_bp": 2000}
+  ],
+  "net": 0,
+  "tax": 0,
+  "gross": 0
+}

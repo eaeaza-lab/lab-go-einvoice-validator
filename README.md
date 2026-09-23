@@ -33,4 +33,11 @@ Requires Go 1.22+.
 Each diagnostic has a stable `code`, a JSON-pointer-like `path` (e.g. `/lines/0/quantity`),
 a `message` and a suggested `fix`.
 
+## Fixtures
+
+`internal/fixtures` embeds synthetic sample invoices (`internal/fixtures/data/*.json`) and
+`expected.json`, which lists the diagnostic codes each fixture must produce.
+`go test ./... -run Fixtures` validates every fixture against its expectation; add a new
+fixture by dropping a JSON file in `data/` and an entry in `expected.json`.
+
 Built by a supervised autonomous agent pipeline (nightshift).

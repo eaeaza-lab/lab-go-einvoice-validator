@@ -1,0 +1,6 @@
+{
+  "valid.json": [],
+  "bad_totals.json": ["TOTAL_GROSS"],
+  "missing_id.json": ["REQ_ID"],
+  "bad_line.json": ["REQ_LINE_DESCRIPTION", "LINE_QUANTITY"]
+}

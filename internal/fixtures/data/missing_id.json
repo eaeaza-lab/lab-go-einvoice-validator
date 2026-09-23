@@ -1,0 +1,10 @@
+{
+  "id": "",
+  "currency": "EUR",
+  "lines": [
+    {"description": "Widget", "quantity": 2, "unit_price": 1000, "tax_rate_bp": 2000}
+  ],
+  "net": 2000,
+  "tax": 400,
+  "gross": 2400
+}
