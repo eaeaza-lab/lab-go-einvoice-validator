@@ -5,7 +5,7 @@ Each milestone fits one ~30-minute session. Acceptance command must exit 0.
 ## Milestones
 
 - [x] **M0 setup** (mvp) — spec, plans, skeleton, one passing test. Accept: `go test ./...`
-- [ ] **M1 model + JSON loader** (mvp) — `invoice.Load(path)` for JSON, unknown-field errors. Accept: `go test ./internal/invoice/...`
+- [x] **M1 model + JSON loader** (mvp) — `invoice.Load(path)` for JSON, unknown-field errors. Accept: `go test ./internal/invoice/...`
 - [ ] **M2 required-field + totals rules polish** (mvp) — per-line diagnostics with paths and suggested fixes. Accept: `go test ./internal/invoice/...`
 - [ ] **M3 Cobra CLI: validate + version** (mvp) — add Cobra, exit codes 0/1/2, text output. Accept: `go test ./cmd/...`
 - [ ] **M4 JSON output format** (mvp) — `--format json`. Accept: `go test ./cmd/...`
@@ -22,10 +22,12 @@ Each milestone fits one ~30-minute session. Acceptance command must exit 0.
 ## Progress log
 
 - M0: spec, plans, README, AGENTS, skeleton with totals validation and 3 passing tests written. Not committed.
+- M1 (2026-09-24): `invoice.Load(path)` / `ParseJSON` with unknown-field and trailing-content errors, 5 tests. Not committed.
 
 ## Decision log
 
 - D1: Money is integer minor units; tax rates in basis points; rounding is half up per line. Avoids floats.
 - D2: Skeleton is stdlib-only so `go test` works offline; Cobra and a pure-Go SQLite driver (modernc.org/sqlite) are added in M3/M10 (the check sandbox has network access).
 - D3: JSON Schema support is a small in-repo subset checker rather than a large dependency.
+- D5: JSON loader uses `DisallowUnknownFields` and rejects any content after the first document, so typos in field names surface as errors rather than silently validating.
 - D4: `.nightshift.json` runs only `go vet` and `go test`, both on the allowlist.

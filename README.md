@@ -15,4 +15,9 @@ go run ./cmd/einvoice
 
 Requires Go 1.22+.
 
+## Library
+
+`invoice.Load(path)` reads a JSON invoice (unknown fields are rejected) and
+`invoice.Validate` returns diagnostics for required fields and totals.
+
 Built by a supervised autonomous agent pipeline (nightshift).
