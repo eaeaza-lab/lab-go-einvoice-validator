@@ -18,6 +18,8 @@ Requires Go 1.22+.
 ## Library
 
 `invoice.Load(path)` reads a JSON invoice (unknown fields are rejected) and
-`invoice.Validate` returns diagnostics for required fields and totals.
+`invoice.Validate` returns diagnostics for required fields, per-line checks and totals.
+Each diagnostic has a stable `code`, a JSON-pointer-like `path` (e.g. `/lines/0/quantity`),
+a `message` and a suggested `fix`.
 
 Built by a supervised autonomous agent pipeline (nightshift).

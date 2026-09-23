@@ -24,4 +24,5 @@ type Diagnostic struct {
 	Code    string `json:"code"`
 	Path    string `json:"path"`
 	Message string `json:"message"`
+	Fix     string `json:"fix,omitempty"` // suggested correction
 }
