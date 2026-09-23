@@ -13,7 +13,7 @@ Each milestone fits one ~30-minute session. Acceptance command must exit 0.
 - [x] **M6 JSON Schema subset validator** (mvp) — embedded schema, stdlib-only checker for type/required/enum. Accept: `go test ./internal/schema/...`
 - [x] **M7 XML input** (mvp) — `encoding/xml` loader, parity with JSON fixtures. Accept: `go test ./internal/invoice/...`
 - [x] **M8 identifier checks** (mvp) — invoice id format, currency, synthetic tax-id checksum. Accept: `go test ./internal/ident/...`
-- [ ] **M9 cross-document consistency** (mvp) — credit note vs. invoice batch. Accept: `go test ./internal/crossdoc/...`
+- [x] **M9 cross-document consistency** (mvp) — credit note vs. invoice batch. Accept: `go test ./internal/crossdoc/...`
 - [ ] **M10 SQLite run history** (mvp) — pure-Go driver, `history` command. Accept: `go test ./internal/store/...`
 - [ ] **M11 demo command + docs** (polish) — `einvoice demo` from embedded fixtures; README usage. Accept: `go test ./...`
 - [ ] **M12 diagnostics polish** (polish) — stable code catalogue, `einvoice explain <code>`. Accept: `go test ./...`
@@ -30,6 +30,7 @@ Each milestone fits one ~30-minute session. Acceptance command must exit 0.
 - M6 (2026-09-24): new `internal/schema` package: subset checker (type/required/properties/items/enum) with embedded `invoice.schema.json`, codes `SCHEMA_TYPE`/`SCHEMA_REQUIRED`/`SCHEMA_ENUM`, 7 tests. Not wired into the CLI yet. Not committed.
 - M7 (2026-09-24): `invoice.ParseXML` (strict: unknown elements/attributes, wrong root and trailing content rejected); `Load` picks XML for `.xml` paths so the CLI handles it; added `testdata/valid.xml` and tests including JSON-fixture/XML round-trip parity. Not committed.
 - M8 (2026-09-24): new `internal/ident`: `CheckInvoiceID` (ID_FORMAT), `CheckCurrency` (CURRENCY_UNKNOWN), `CheckTaxID` (TAXID_FORMAT/TAXID_CHECKSUM) with tests. Standalone, not wired into `validate`. Not committed.
+- M9 (2026-09-24): new `internal/crossdoc`: `Check([]Document)` reports XDOC_REF_MISSING, XDOC_REF_NOT_FOUND, XDOC_CURRENCY, XDOC_PARTY and XDOC_EXCEEDS_NET/TAX/GROSS for credit notes, with 5 tests. Standalone, not wired into `validate`. Not committed.
 
 ## Decision log
 
@@ -44,4 +45,5 @@ Each milestone fits one ~30-minute session. Acceptance command must exit 0.
 - D10: Schema checker is standalone and not yet part of `validate`: wiring it in would add SCHEMA_* codes on top of the REQ_* ones and change fixture expectations, so that is left for a later milestone. Schemas are parsed strictly (unknown keywords and unsupported types are errors); numbers are decoded as `json.Number` so "integer" means an int64-parsable literal (`1.5` fails, `2` passes); enum compares canonical JSON renderings; a type mismatch stops descent into that value.
 - D11: XML layout mirrors the JSON field names as child elements (`<invoice><id/><currency/><lines><line>…</line></lines><net/><tax/><gross/></invoice>`), no attributes, no namespaces. `encoding/xml` ignores unknown elements, so a token pre-pass enforces the allowed element set to match D5. Missing elements decode to zero values, same as JSON. Format is chosen by file extension (`.xml`, case-insensitive), otherwise JSON. Parity is tested by marshalling each embedded JSON fixture to XML; `XMLName` is cleared after decoding so structs compare equal.
 - D12: Identifier checks are standalone (like the schema checker, D10) so existing fixture expectations stay stable. Invoice id is `INV-YYYY-NNNN` (4–8 digits); currency is a 12-code ISO 4217 subset; the invoice model has no party/tax-id field yet, so `CheckTaxID` takes the path from the caller. Synthetic tax id = `SY` + 8 digits + check digit, where check = sum(digit*(pos+1), pos 0..7) mod 10. Empty id/currency yield no diagnostic here (REQ_* covers them).
+- D13: Cross-document checks are standalone (like D10/D12). The invoice model has no party, kind or reference fields, so `crossdoc.Document` wraps an `invoice.Invoice` with caller-supplied `Kind`, `Party` and `Ref`; the model and fixtures stay unchanged. Credit notes carry positive amounts and credits against one invoice accumulate, so the note that crosses the limit is reported. Paths are `/<document name>/<field>`. Amounts equal to the original are allowed.
 - D4: `.nightshift.json` runs only `go vet` and `go test`, both on the allowlist.

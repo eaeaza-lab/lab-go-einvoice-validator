@@ -48,6 +48,14 @@ JSON-pointer-like path. It is a library only for now; the CLI does not call it y
 (ISO 4217 subset, `CURRENCY_UNKNOWN`) and a synthetic tax id `SY` + 8 digits + check digit
 (`TAXID_FORMAT`, `TAXID_CHECKSUM`). Library only for now; the CLI does not call it yet.
 
+## Cross-document checks
+
+`internal/crossdoc` checks a batch: each credit note must reference an invoice in the batch
+(`XDOC_REF_MISSING`, `XDOC_REF_NOT_FOUND`), share its currency and party (`XDOC_CURRENCY`,
+`XDOC_PARTY`), and not credit more than the invoice net, tax or gross in total
+(`XDOC_EXCEEDS_NET`, `XDOC_EXCEEDS_TAX`, `XDOC_EXCEEDS_GROSS`). Library only for now; the CLI
+does not call it yet.
+
 ## Fixtures
 
 `internal/fixtures` embeds synthetic sample invoices (`internal/fixtures/data/*.json`) and
