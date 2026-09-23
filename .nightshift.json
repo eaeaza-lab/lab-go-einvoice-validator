@@ -1,0 +1,1 @@
+{"check": ["go vet ./...", "go test ./..."]}

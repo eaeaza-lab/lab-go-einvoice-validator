@@ -1,0 +1,17 @@
+# binaries
+/bin/
+/einvoice
+/einvoice.exe
+*.exe
+*.test
+*.out
+
+# local data
+*.db
+*.sqlite
+*.sqlite3
+
+# editor / OS
+.idea/
+.vscode/
+.DS_Store
