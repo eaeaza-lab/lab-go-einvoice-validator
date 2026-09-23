@@ -10,8 +10,14 @@ actionable diagnostics. Runs fully offline; all sample data is synthetic.
 
 ```
 go test ./...
-go run ./cmd/einvoice
+go run ./cmd/einvoice version
+go run ./cmd/einvoice validate testdata/valid.json
+go run ./cmd/einvoice validate testdata/bad_totals.json
 ```
+
+`validate <file>...` checks JSON invoices and prints one line per diagnostic
+(`file: CODE /path: message`, followed by a `fix:` hint). Exit codes: `0` all valid,
+`1` diagnostics found, `2` usage or I/O error (missing/malformed file, bad arguments).
 
 Requires Go 1.22+.
 
